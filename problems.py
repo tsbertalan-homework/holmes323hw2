@@ -1,13 +1,14 @@
 
 import numpy as np
-import kevrekidis as kv
+import kevrekidis as kv  # In-lab package. Lots of convenience functions that
+                         #  aren't really needed here, but that I'm used to using. 
 from utilities import plotNullclines, logging
 if __name__ != "__main__":
-    logging.disable(logging.INFO)
+    logging.disable(logging.INFO)  # Another way of turning of debug. Unnecessary.
 
 
 def problem1(fname='hw2-problem1.pdf'):
-    #fig, A = kv.fa(numAxes=3)
+    #make some figure objects
     fig = kv.plotting.plt.figure(figsize=(4,13))
     A = [fig.add_subplot(4,1,1),
             fig.add_subplot(4,1,2),
@@ -15,51 +16,46 @@ def problem1(fname='hw2-problem1.pdf'):
             fig.add_subplot(4,1,4),
     ]           
 
-    plotNullclines(A[0])
-    #plotNullclines(A[1], b=.75)
-    #plotNullclines(A[2], b=.75, ds=0.05)
+    # add nullclines
+    plotNullclines(A[0], showFlipped=False)
     plotNullclines(A[1],
-                   s1 = .5 + .1 / 2,
-                   s2 = 1 - .5 + .1 / 2)
+                   s1=.55, s2=.45)
     plotNullclines(A[2],
-                   s1 = .5 + .5 / 2,
-                   s2 = 1 - .5 + .5 / 2)
+                   s1=.75, s2=.25)
     plotNullclines(A[3],
-                   s1 = .5 + 0.98 / 2,
-                   s2 = 1 - .5 + 0.98 / 2)
+                   s1=.99, s2=.01)
+    
+    # further manipulate the figures
     for i in range(len(A)):
         if i != len(A)-1:
             A[i].set_xticklabels([])
             A[i].set_xlabel('')
         if i == 0:
             A[i].legend(loc='lower left', prop={'size':10})
-    fig.subplots_adjust(left=.2)
+    fig.subplots_adjust(left=.2, bottom=.05)
     fig.savefig(fname)
 
 
 def problem1Bifurc(fname='hw2-problem1Bifurc.pdf'):
-    fig, ax = kv.fa(figsize=(4,2))
+    fig, ax = kv.fa(figsize=(4,2))  # figures
 
+    # a cubic equation
     y = lambda x: -(x - 1) * (x + 1) * x
     ax.set_xlim(-1,1)
-    s3 = np.sqrt(1./3)
+    s3 = np.sqrt(1./3)  # regions for changing plotting style
     offset = 0
     stablex1 = np.linspace(-2., -s3, 400) + offset
     unstablex = np.linspace(-s3, s3, 400) + offset
     stablex2 = np.linspace(s3, 2., 400) + offset
-    pairs = zip(
+    for (x, style) in zip(
                         (stablex1, unstablex, stablex2),
                         ('k', 'r--', 'k')
-                    )
-    for (x, style) in pairs:
+                    ):
         ax.plot(y(x-offset), x, style)
     
+    # make everything wonderful
     ax.set_xlim(0,.5)
-    #ax.set_ylim(-1,1)
-    #ax.axvline(0, color='gray', lw=.01)
-    #ax.axhline(0, color='gray', lw=.01)
     ax.set_xticks([]); ax.set_yticks([])
-    #ax.set_xticklabels(['0', '1'])
     ax.set_xlabel(r'$\Delta s$'); ax.set_ylabel(r'$\tilde x_2$')
     ax.set_xticklabels
     fig.savefig(fname)
@@ -94,84 +90,92 @@ def problem2(fname='hw2-problem2.pdf',
            Dfdx(x2) * xdot(x2, x1, s2) * (x2 + f(x2))
            
     
-    # plot ... 
+    # plot V and Vdot 
     fig = kv.plotting.plt.figure(figsize=(4,10))
-    #  ... Vdot
     ax1 = fig.add_subplot(2,1,1)
+    ax2 = fig.add_subplot(2,1,2)
+    for ax, mat in zip((ax1, ax2),(Vdot, V)):
+        
     #fig, ax = kv.showMat(V, extent=x1lim+x2lim, zorder=-30)
-    kv.showMat(Vdot, extent=x1lim+x2lim, zorder=-30, figax=(fig, ax1), cmap='RdYlBu',
-               alpha=.9, interpolation='bicubic')
+        kv.showMat(mat, extent=x1lim+x2lim, zorder=-30, figax=(fig, ax), cmap='jet',
+                   alpha=.9, interpolation='bicubic')
+        # Add the nullclines to both plots
+        plotNullclines(ax, g=g, b=b, showFlipped=False, s1=s1, s2=s2, lims=x1lim)
     
-    # show contour lines
-#     CS = ax1.contour(x1, x2, VdotSimp)
-#     kv.plotting.plt.clabel(CS, fontsize=9, inline=1)
-#     kv.plotting.plt.clabel(CS, fontsize=9, inline=1)
-
-    #  ... V
-    from mpl_toolkits.mplot3d import axes3d
-    ax2 = fig.add_subplot(2,1,2,projection='3d')
-    ax2.plot_surface(x1, x2, V, rstride=1, cstride=1,
-                 linewidth=0, antialiased=True, cmap=kv.plotting.getCmap('jet'),
-                 alpha=.7)
-    
-#     ax2.contour(x1, x2, V)
-    
-    # Add the nullclines to both plots
-    plotNullclines(ax1, g=g, b=b, showFlipped=False, s1=s1, s2=s2, lims=x1lim)
-    plotNullclines(ax2, g=g, b=b, showFlipped=False, s1=s1, s2=s2, lims=x1lim)
-    
-    # Set titles and labels; save
-    for ax in ax1, ax2:
-        ax.set_xticks(np.linspace(x1lim[0], x1lim[1], 2))
+        # Set titles and labels; save
+        ax.set_xlim(x1lim)
+        ax.set_ylim(x2lim)
         ax.set_yticks(np.linspace(x2lim[0], x2lim[1], 2))
-    
-    ax2.set_zticks(np.linspace(V.min(), V.max(), 2))
-    ax2.view_init(elev=20, azim=250)
+        
+    ax1.set_xticks([])
+    ax2.set_xticks(np.linspace(x1lim[0], x1lim[1], 2))
     
     ax1.set_title(r'$\frac{d V(x_1, x_2)}{dt}$')
     ax2.set_title('$V(x_1,x_2)$')
-    fig.subplots_adjust(left=.2, top=.95, bottom=.02)
-    ax1.set_xlim(x1lim)
-    ax1.set_ylim(x2lim)
-    ax2.set_xlim(x1lim)
-    ax2.set_ylim(x2lim)
+    fig.subplots_adjust(left=.2, top=.95, bottom=.05)
     fig.savefig(fname)
 
 
-def problem3(fname='hw2-problem3.pdf'):
-    def Dx(mu, om, al):
-        def dx(X):
-            x = X[0]
-            y = X[1]
-            out = np.array([
-             mu*x-om*y+al*(x**2 + y**2)*x,
-             mu*y+om*x+al*(x**2 + y**2)*y,
-                             ])
-            return out
-        return dx
+
+def treatment(fname, fig, axes):
+    '''some tasks for both of problem 3's figures'''
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+    axes[-1].set_ylabel('$r^e$')
+    axes[-1].set_xlabel(r'$\mu$')
+    fig.savefig(fname)
+
+
+def problem3o3(fname='hw2-problem3-o3.pdf'):
     fig = kv.plotting.plt.figure()
-    bifurcAx = fig.add_subplot(2, 1, 1)
-    phaseAx1 = fig.add_subplot(2, 2, 3)
-    phaseAx2 = fig.add_subplot(2, 2, 4)
-    om = 1
-    al = .0001
-    for mu, ax, tmax in zip((-1, 1), (phaseAx1, phaseAx2), (64, 1)):
-        dx = Dx(mu, om, al)
-        NX = NY = 8
-        width = 4
-        for x0 in np.linspace(-width/2, width/2, NX):
-            for y0 in np.linspace(-width/2, width/2, NY):
-                X, T = kv.integrate((x0, y0), dx, tmin=0, tmax=tmax, nstep=1e3)
-                ax.plot(X[:,0], X[:,1], 'k')
-                ax.scatter(x0, y0, color='green')
-        ax.set_xlim(-width/2, width/2)
-        ax.set_ylim(-width/2, width/2)
-    fig.suptitle(r'$\omega=%.1f$, $\alpha=%.1f$' % (om, al))
-    fig.savefig(fname)
-        
+    ax = fig.add_subplot(2, 1, 1)
+    axes = [fig.add_subplot(2,2,i) for i in 3,4]; axes.append(ax)  # make a grid of axes
+    
+    f = lambda x: -x**2  # a quadratic pair of branches (QUALITATIVE! probably)
+    #Plot the branches
+    x = np.linspace(-1,1, 100) 
+    ax.plot(f(x), x, 'k--')
+    # plot the horizontal axis
+    x = (-2,f(0))
+    ax.plot(x, (0,0), 'k-')
+    x = (f(0),1)
+    ax.plot(x, (0,0), 'k--')
+    ax.set_xlim(-1,1)
+    
+    treatment(fname, fig, axes)
+
+
+def problem3o5(fname='hw2-problem3-o5.pdf'):
+    fig = kv.plotting.plt.figure()
+    ax = fig.add_subplot(2, 1, 1)
+    axes = [fig.add_subplot(2,3,i) for i in 4,5,6]; axes.append(ax)
+    borders = -3, -np.sqrt(5./2), np.sqrt(5./2), 3  # regions for switching plotting style
+    f = lambda x: 4 - 5*x**2 + x**4
+    styles = 'k-', 'k--'
+    
+    # Plot the branches
+    for i in range(len(borders)-1):
+        x = np.linspace(borders[i], borders[i+1], 100) 
+        ax.plot(f(x), x, styles[i%2])
+    
+    # Plot the horizontal axis
+    x = (-5,f(0))
+    ax.plot(x, (0,0), 'k-')
+    x = (f(0),6)
+    ax.plot(x, (0,0), 'k--')
+    ax.set_xlim(-5,6)
+    treatment(fname, fig, axes)
+
 
 def problem5fig1(fig, fname='hw2-problem5-Vtraces.pdf'):
-    fig.savefig(fname)
+    fig.savefig(fname)  # this is very ugly, I know. The point of doing it this
+                        #  way is that I can call this code from LaTeX
+                        #  (via ctan.org/tex-archive/macros/latex/contrib/python),
+                        #  and, for organization's sake, I
+                        #  am trying to have one function per figure, so I can
+                        #  call generate it directly there, with the option
+                        #  to pass in parameters if desired.
     
 def problem5fig2(fig, fname='hw2-problem5-DvsL.pdf'):
     fig.savefig(fname)
@@ -224,7 +228,7 @@ def problem5():
         initial = newton_krylov(fpF, (c,h,b,a,p,g))
         #initial = (c,h,b,a,p,g)  # <- This also sortof works, but not as well.
         def doTest(D):
-            ## Integrate for this value of D. 
+            ## Integrate for this value of D. This uses scipy.odeint
             X, T = kv.integrate(initial, Dxdt(l, D, 10),
                                 tmin=0, tmax=200, giveTime=True)
             ## Find the peak value of g.
@@ -251,6 +255,8 @@ def problem5():
         ax1.axvline(x=T[peakInd], color=color, lw=1)
         ax1.set_xlabel("$t$ [ms]")
         ax1.set_ylabel("$G(t) - G(0)$ [Hz?]")
+        
+    # Do some more figure manipulations
     fig1.subplots_adjust(right=.95, bottom=.2, left=.1)
     ax1.legend()
     
@@ -263,6 +269,7 @@ def problem5():
     
     L = np.logspace(np.log10(min(lvals)), np.log10(max(lvals)), num=50)
     
+    # Let's add some polynomial "trendlines", then wish we hadn't:
     def addPoly(x0, y0, ord, labelord):
         x = L
         a = np.log10(x)
@@ -273,10 +280,10 @@ def problem5():
         ax2.plot(x, y, lw=.5, label=r'$\log_{10}(\Delta)=%s\log_{10}(L)$' % labelord)
     addPoly(min(lvals), min(Dvals), 0.33333, r'\frac{1}{3}')
     addPoly(max(lvals), max(Dvals), 1.0, '1')
-        
+    
+    # Compare to the approxmation in Eqn. (2.5.7).
     Dapprox = (13.+L)**2/(50.*13.)
     ax2.plot(L, Dapprox, 'k--', label='eqn (2.5.7)')
-    ylims = ax2.get_ylim()
     ax2.set_ylim(min((
                      min(Dvals),
                      min(Dapprox),
@@ -284,15 +291,18 @@ def problem5():
                      max(Dvals)*2,
                  )
     ax2.legend(loc='upper left')
-    #fig2.subplots_adjust()
     return fig1, fig2
     
+    
 if __name__ == "__main__":
-#     problem1()
+    # If this is being run as a script, do and show everything.
+    problem1()
 #     problem1Bifurc()
-    problem2()
-#     problem3()
+#     problem2()
+#     problem3o3()
+#     problem3o5()
 #     fig1, fig2 = problem5()
 #     problem5fig1(fig1)
 #     problem5fig2(fig2)
+    
     kv.plotting.show()
